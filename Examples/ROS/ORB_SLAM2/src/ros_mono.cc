@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 
     ImageGrabber igb(&SLAM, &tracking_status_pub);
 
-    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1000, &ImageGrabber::GrabImage, &igb);
+    ros::Subscriber sub = nodeHandler.subscribe("/camera/image_raw", 1, &ImageGrabber::GrabImage, &igb);
 
     ros::spin();
 
