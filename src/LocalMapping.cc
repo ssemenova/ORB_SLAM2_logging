@@ -54,7 +54,7 @@ void LocalMapping::Run()
 
     while(1)
     {
-        auto lm_start = std::chrono::high_resolution_clock::now();
+        auto lm_start = StartTimer();
 
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
@@ -62,51 +62,42 @@ void LocalMapping::Run()
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
-            auto timer_start = std::chrono::high_resolution_clock::now();
+            auto timer_start = StartTimer();
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
-            auto timer_end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-            cout << "LocalMapping,Process KF," << duration.count() << endl;
-
-            timer_start = std::chrono::high_resolution_clock::now();
+            EndTimerAndPrint(timer_start, "Process KF");
+            
+            timer_start = StartTimer();
             // Check recent MapPoints
             MapPointCulling();
-            timer_end = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-            cout << "LocalMapping,MP culling," << duration.count() << endl;
+            EndTimerAndPrint(timer_start, "MP culling");
 
-            timer_start = std::chrono::high_resolution_clock::now();
+            timer_start = StartTimer();
             // Triangulate new MapPoints
             CreateNewMapPoints();
-            timer_end = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-            cout << "LocalMapping,create new mappoints," << duration.count() << endl;
+            EndTimerAndPrint(timer_start, "create new mappoints");
 
+            timer_start = StartTimer();
             if(!CheckNewKeyFrames())
             {
-                timer_start = std::chrono::high_resolution_clock::now();
                 // Find more matches in neighbor keyframes and fuse point duplications
                 SearchInNeighbors();
-                timer_end = std::chrono::high_resolution_clock::now();
-                duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-                cout << "LocalMapping,search in neighbors," << duration.count() << endl;
             }
+            EndTimerAndPrint(timer_start, "search in neighbors");
+
 
             mbAbortBA = false;
 
             if(!CheckNewKeyFrames() && !stopRequested())
             {
                 // Local BA
-                timer_start = std::chrono::high_resolution_clock::now();
+                timer_start = StartTimer();
                 if(mpMap->KeyFramesInMap()>2)
                     Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
-                timer_end = std::chrono::high_resolution_clock::now();
-                duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-                cout << "LocalMapping,local BA," << duration.count() << endl;
+                EndTimerAndPrint(timer_start, "local BA");
 
-                    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-                    cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
+                auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+                cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
 
                 //     auto allKFs = mpMap->GetAllKeyFrames();
                 //     for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
@@ -122,18 +113,14 @@ void LocalMapping::Run()
                 //     }
                     cout << endl;
 
-                timer_start = std::chrono::high_resolution_clock::now();
+                timer_start = StartTimer();
                 // Check redundant local Keyframes
                 KeyFrameCulling();
-                timer_end = std::chrono::high_resolution_clock::now();
-                duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-                cout << "LocalMapping,keyframe culling," << duration.count() << endl;
+                EndTimerAndPrint(timer_start, "keyframe culling");
             }
-            timer_start = std::chrono::high_resolution_clock::now();
+            timer_start = StartTimer();
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-            timer_end = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-            cout << "LocalMapping,insert keyframe into map," << duration.count() << endl;
+            EndTimerAndPrint(timer_start, "insert keyframe into map");
         }
         else if(Stop())
         {
@@ -147,10 +134,14 @@ void LocalMapping::Run()
                 break;
         }
 
+        auto timer_start = StartTimer();
         ResetIfRequested();
+        EndTimerAndPrint(timer_start, "reset if requested");
 
+        timer_start = StartTimer();
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(true);
+        EndTimerAndPrint(timer_start, "set accept keyframes");
 
         if(CheckFinish())
             break;
@@ -169,7 +160,10 @@ void LocalMapping::Run()
 
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    auto time_start = StartTimer();
+unique_lock<mutex> lock(mMutexNewKFs);
+    EndTimerAndPrint(time_start, "waiting on mutex");
+
     mlNewKeyFrames.push_back(pKF);
     mbAbortBA=true;
 }
@@ -177,14 +171,18 @@ void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 
 bool LocalMapping::CheckNewKeyFrames()
 {
+    auto time_start = StartTimer();
     unique_lock<mutex> lock(mMutexNewKFs);
+    EndTimerAndPrint(time_start, "waiting on mutex");
     return(!mlNewKeyFrames.empty());
 }
 
 void LocalMapping::ProcessNewKeyFrame()
 {
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexNewKFs);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         mlNewKeyFrames.pop_front();
     }
@@ -664,7 +662,9 @@ bool LocalMapping::AcceptKeyFrames()
 
 void LocalMapping::SetAcceptKeyFrames(bool flag)
 {
+    auto time_start = StartTimer();
     unique_lock<mutex> lock(mMutexAccept);
+    EndTimerAndPrint(time_start, "waiting on mutex");
     mbAcceptKeyFrames=flag;
 }
 
@@ -811,6 +811,22 @@ bool LocalMapping::isFinished()
 {
     unique_lock<mutex> lock(mMutexFinish);
     return mbFinished;
+}
+
+std::chrono::time_point<std::chrono::high_resolution_clock> LocalMapping::StartTimer()
+{
+    auto timer_start = std::chrono::high_resolution_clock::now();
+    return timer_start;
+}
+
+void LocalMapping::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
+{
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+    if (duration.count() > 0) {
+        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+    }
 }
 
 } //namespace ORB_SLAM

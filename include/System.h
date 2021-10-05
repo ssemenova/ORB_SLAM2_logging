@@ -25,6 +25,7 @@
 #include<string>
 #include<thread>
 #include<opencv2/core/core.hpp>
+#include<chrono>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -57,6 +58,8 @@ public:
     };
 
 public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> StartTimer();
+    void EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, string print_statement);
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);

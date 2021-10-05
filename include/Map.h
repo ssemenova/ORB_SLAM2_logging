@@ -38,6 +38,9 @@ class KeyFrame;
 class Map
 {
 public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> StartTimer();
+    void EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, string print_statement);
+
     Map();
 
     void AddKeyFrame(KeyFrame* pKF);

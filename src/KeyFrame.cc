@@ -69,7 +69,10 @@ void KeyFrame::ComputeBoW()
 
 void KeyFrame::SetPose(const cv::Mat &Tcw_)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     Tcw_.copyTo(Tcw);
     cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
     cv::Mat tcw = Tcw.rowRange(0,3).col(3);
@@ -85,45 +88,66 @@ void KeyFrame::SetPose(const cv::Mat &Tcw_)
 
 cv::Mat KeyFrame::GetPose()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Tcw.clone();
 }
 
 cv::Mat KeyFrame::GetPoseInverse()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Twc.clone();
 }
 
 cv::Mat KeyFrame::GetCameraCenter()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Ow.clone();
 }
 
 cv::Mat KeyFrame::GetStereoCenter()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Cw.clone();
 }
 
 
 cv::Mat KeyFrame::GetRotation()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Tcw.rowRange(0,3).colRange(0,3).clone();
 }
 
 cv::Mat KeyFrame::GetTranslation()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPose);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return Tcw.rowRange(0,3).col(3).clone();
 }
 
 void KeyFrame::AddConnection(KeyFrame *pKF, const int &weight)
 {
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexConnections);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(!mConnectedKeyFrameWeights.count(pKF))
             mConnectedKeyFrameWeights[pKF]=weight;
         else if(mConnectedKeyFrameWeights[pKF]!=weight)
@@ -137,7 +161,10 @@ void KeyFrame::AddConnection(KeyFrame *pKF, const int &weight)
 
 void KeyFrame::UpdateBestCovisibles()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     vector<pair<int,KeyFrame*> > vPairs;
     vPairs.reserve(mConnectedKeyFrameWeights.size());
     for(map<KeyFrame*,int>::iterator mit=mConnectedKeyFrameWeights.begin(), mend=mConnectedKeyFrameWeights.end(); mit!=mend; mit++)
@@ -158,7 +185,10 @@ void KeyFrame::UpdateBestCovisibles()
 
 set<KeyFrame*> KeyFrame::GetConnectedKeyFrames()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     set<KeyFrame*> s;
     for(map<KeyFrame*,int>::iterator mit=mConnectedKeyFrameWeights.begin();mit!=mConnectedKeyFrameWeights.end();mit++)
         s.insert(mit->first);
@@ -167,13 +197,19 @@ set<KeyFrame*> KeyFrame::GetConnectedKeyFrames()
 
 vector<KeyFrame*> KeyFrame::GetVectorCovisibleKeyFrames()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mvpOrderedConnectedKeyFrames;
 }
 
 vector<KeyFrame*> KeyFrame::GetBestCovisibilityKeyFrames(const int &N)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     if((int)mvpOrderedConnectedKeyFrames.size()<N)
         return mvpOrderedConnectedKeyFrames;
     else
@@ -183,7 +219,9 @@ vector<KeyFrame*> KeyFrame::GetBestCovisibilityKeyFrames(const int &N)
 
 vector<KeyFrame*> KeyFrame::GetCovisiblesByWeight(const int &w)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
 
     if(mvpOrderedConnectedKeyFrames.empty())
         return vector<KeyFrame*>();
@@ -200,7 +238,10 @@ vector<KeyFrame*> KeyFrame::GetCovisiblesByWeight(const int &w)
 
 int KeyFrame::GetWeight(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     if(mConnectedKeyFrameWeights.count(pKF))
         return mConnectedKeyFrameWeights[pKF];
     else
@@ -209,13 +250,19 @@ int KeyFrame::GetWeight(KeyFrame *pKF)
 
 void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mvpMapPoints[idx]=pMP;
 }
 
 void KeyFrame::EraseMapPointMatch(const size_t &idx)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mvpMapPoints[idx]=static_cast<MapPoint*>(NULL);
 }
 
@@ -234,7 +281,10 @@ void KeyFrame::ReplaceMapPointMatch(const size_t &idx, MapPoint* pMP)
 
 set<MapPoint*> KeyFrame::GetMapPoints()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     set<MapPoint*> s;
     for(size_t i=0, iend=mvpMapPoints.size(); i<iend; i++)
     {
@@ -249,7 +299,10 @@ set<MapPoint*> KeyFrame::GetMapPoints()
 
 int KeyFrame::TrackedMapPoints(const int &minObs)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
 
     int nPoints=0;
     const bool bCheckObs = minObs>0;
@@ -276,13 +329,19 @@ int KeyFrame::TrackedMapPoints(const int &minObs)
 
 vector<MapPoint*> KeyFrame::GetMapPointMatches()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mvpMapPoints;
 }
 
 MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mvpMapPoints[idx];
 }
 
@@ -293,7 +352,10 @@ void KeyFrame::UpdateConnections()
     vector<MapPoint*> vpMP;
 
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lockMPs(mMutexFeatures);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         vpMP = mvpMapPoints;
     }
 
@@ -361,7 +423,9 @@ void KeyFrame::UpdateConnections()
     }
 
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lockCon(mMutexConnections);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
 
         // mspConnectedKeyFrames = spConnectedKeyFrames;
         mConnectedKeyFrameWeights = KFcounter;
@@ -380,64 +444,94 @@ void KeyFrame::UpdateConnections()
 
 void KeyFrame::AddChild(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mspChildrens.insert(pKF);
 }
 
 void KeyFrame::EraseChild(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mspChildrens.erase(pKF);
 }
 
 void KeyFrame::ChangeParent(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mpParent = pKF;
     pKF->AddChild(this);
 }
 
 set<KeyFrame*> KeyFrame::GetChilds()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mspChildrens;
 }
 
 KeyFrame* KeyFrame::GetParent()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mpParent;
 }
 
 bool KeyFrame::hasChild(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mspChildrens.count(pKF);
 }
 
 void KeyFrame::AddLoopEdge(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mbNotErase = true;
     mspLoopEdges.insert(pKF);
 }
 
 set<KeyFrame*> KeyFrame::GetLoopEdges()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lockCon(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mspLoopEdges;
 }
 
 void KeyFrame::SetNotErase()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mbNotErase = true;
 }
 
 void KeyFrame::SetErase()
 {
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexConnections);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mspLoopEdges.empty())
         {
             mbNotErase = false;
@@ -453,7 +547,10 @@ void KeyFrame::SetErase()
 void KeyFrame::SetBadFlag()
 {   
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexConnections);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mnId==0)
             return;
         else if(mbNotErase)
@@ -470,8 +567,10 @@ void KeyFrame::SetBadFlag()
         if(mvpMapPoints[i])
             mvpMapPoints[i]->EraseObservation(this);
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexConnections);
         unique_lock<mutex> lock1(mMutexFeatures);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
 
         mConnectedKeyFrameWeights.clear();
         mvpOrderedConnectedKeyFrames.clear();
@@ -546,7 +645,9 @@ void KeyFrame::SetBadFlag()
 
 bool KeyFrame::isBad()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexConnections);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
     return mbBad;
 }
 
@@ -554,7 +655,10 @@ void KeyFrame::EraseConnection(KeyFrame* pKF)
 {
     bool bUpdate = false;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexConnections);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mConnectedKeyFrameWeights.count(pKF))
         {
             mConnectedKeyFrameWeights.erase(pKF);
@@ -623,7 +727,10 @@ cv::Mat KeyFrame::UnprojectStereo(int i)
         const float y = (v-cy)*z*invfy;
         cv::Mat x3Dc = (cv::Mat_<float>(3,1) << x, y, z);
 
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexPose);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         return Twc.rowRange(0,3).colRange(0,3)*x3Dc+Twc.rowRange(0,3).col(3);
     }
     else
@@ -635,8 +742,11 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     vector<MapPoint*> vpMapPoints;
     cv::Mat Tcw_;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexFeatures);
         unique_lock<mutex> lock2(mMutexPose);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         vpMapPoints = mvpMapPoints;
         Tcw_ = Tcw.clone();
     }
@@ -661,5 +771,22 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
 
     return vDepths[(vDepths.size()-1)/q];
 }
+
+std::chrono::time_point<std::chrono::high_resolution_clock> KeyFrame::StartTimer()
+{
+    auto timer_start = std::chrono::high_resolution_clock::now();
+    return timer_start;
+}
+
+void KeyFrame::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
+{
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+    if (duration.count() > 0) {
+        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+    }
+}
+
 
 } //namespace ORB_SLAM

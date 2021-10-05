@@ -27,6 +27,7 @@
 
 #include<opencv2/core/core.hpp>
 #include<mutex>
+#include<thread>
 
 namespace ORB_SLAM2
 {
@@ -39,6 +40,9 @@ class Frame;
 class MapPoint
 {
 public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> StartTimer();
+    void EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, string print_statement);
+
     MapPoint(const cv::Mat &Pos, KeyFrame* pRefKF, Map* pMap);
     MapPoint(const cv::Mat &Pos,  Map* pMap, Frame* pFrame, const int &idxF);
 

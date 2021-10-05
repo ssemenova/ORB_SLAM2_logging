@@ -100,7 +100,13 @@ void LoopClosing::Run()
 
 void LoopClosing::InsertKeyFrame(KeyFrame *pKF)
 {
+    auto timer_start = std::chrono::high_resolution_clock::now();
     unique_lock<mutex> lock(mMutexLoopQueue);
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+    cout << "Sofiya-LMTest," << tid << ",waiting on mutex," << duration.count() << endl;
+
     if(pKF->mnId!=0)
         mlpLoopKeyFrameQueue.push_back(pKF);
 }

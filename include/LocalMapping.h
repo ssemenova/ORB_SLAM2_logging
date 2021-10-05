@@ -28,6 +28,7 @@
 #include "KeyFrameDatabase.h"
 
 #include <mutex>
+#include<chrono>
 
 
 namespace ORB_SLAM2
@@ -71,6 +72,9 @@ public:
         unique_lock<std::mutex> lock(mMutexNewKFs);
         return mlNewKeyFrames.size();
     }
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> StartTimer();
+    void EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, string print_statement);
 
 protected:
 

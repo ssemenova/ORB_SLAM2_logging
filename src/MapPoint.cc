@@ -39,7 +39,10 @@ MapPoint::MapPoint(const cv::Mat &Pos, KeyFrame *pRefKF, Map* pMap):
     mNormalVector = cv::Mat::zeros(3,1,CV_32F);
 
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mnId=nNextId++;
 }
 
@@ -66,38 +69,56 @@ MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF
     pFrame->mDescriptors.row(idxF).copyTo(mDescriptor);
 
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mnId=nNextId++;
 }
 
 void MapPoint::SetWorldPos(const cv::Mat &Pos)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock2(mGlobalMutex);
     unique_lock<mutex> lock(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     Pos.copyTo(mWorldPos);
 }
 
 cv::Mat MapPoint::GetWorldPos()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mWorldPos.clone();
 }
 
 cv::Mat MapPoint::GetNormal()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mNormalVector.clone();
 }
 
 KeyFrame* MapPoint::GetReferenceKeyFrame()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mpRefKF;
 }
 
 void MapPoint::AddObservation(KeyFrame* pKF, size_t idx)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     if(mObservations.count(pKF))
         return;
     mObservations[pKF]=idx;
@@ -112,7 +133,10 @@ void MapPoint::EraseObservation(KeyFrame* pKF)
 {
     bool bBad=false;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexFeatures);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mObservations.count(pKF))
         {
             int idx = mObservations[pKF];
@@ -138,13 +162,19 @@ void MapPoint::EraseObservation(KeyFrame* pKF)
 
 map<KeyFrame*, size_t> MapPoint::GetObservations()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mObservations;
 }
 
 int MapPoint::Observations()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return nObs;
 }
 
@@ -152,8 +182,11 @@ void MapPoint::SetBadFlag()
 {
     map<KeyFrame*,size_t> obs;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock1(mMutexFeatures);
         unique_lock<mutex> lock2(mMutexPos);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         mbBad=true;
         obs = mObservations;
         mObservations.clear();
@@ -169,8 +202,11 @@ void MapPoint::SetBadFlag()
 
 MapPoint* MapPoint::GetReplaced()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock1(mMutexFeatures);
     unique_lock<mutex> lock2(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mpReplaced;
 }
 
@@ -216,26 +252,38 @@ void MapPoint::Replace(MapPoint* pMP)
 
 bool MapPoint::isBad()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
     unique_lock<mutex> lock2(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mbBad;
 }
 
 void MapPoint::IncreaseVisible(int n)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mnVisible+=n;
 }
 
 void MapPoint::IncreaseFound(int n)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mnFound+=n;
 }
 
 float MapPoint::GetFoundRatio()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return static_cast<float>(mnFound)/mnVisible;
 }
 
@@ -247,7 +295,10 @@ void MapPoint::ComputeDistinctiveDescriptors()
     map<KeyFrame*,size_t> observations;
 
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock1(mMutexFeatures);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mbBad)
             return;
         observations=mObservations;
@@ -301,20 +352,29 @@ void MapPoint::ComputeDistinctiveDescriptors()
     }
 
     {
-        unique_lock<mutex> lock(mMutexFeatures);
+        auto timer_start = StartTimer();
+        unique_lock<mutex> lock1(mMutexFeatures);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         mDescriptor = vDescriptors[BestIdx].clone();
     }
 }
 
 cv::Mat MapPoint::GetDescriptor()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mDescriptor.clone();
 }
 
 int MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     if(mObservations.count(pKF))
         return mObservations[pKF];
     else
@@ -323,7 +383,10 @@ int MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
 
 bool MapPoint::IsInKeyFrame(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexFeatures);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return (mObservations.count(pKF));
 }
 
@@ -333,8 +396,11 @@ void MapPoint::UpdateNormalAndDepth()
     KeyFrame* pRefKF;
     cv::Mat Pos;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock1(mMutexFeatures);
         unique_lock<mutex> lock2(mMutexPos);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         if(mbBad)
             return;
         observations=mObservations;
@@ -363,7 +429,10 @@ void MapPoint::UpdateNormalAndDepth()
     const int nLevels = pRefKF->mnScaleLevels;
 
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock3(mMutexPos);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         mfMaxDistance = dist*levelScaleFactor;
         mfMinDistance = mfMaxDistance/pRefKF->mvScaleFactors[nLevels-1];
         mNormalVector = normal/n;
@@ -372,13 +441,19 @@ void MapPoint::UpdateNormalAndDepth()
 
 float MapPoint::GetMinDistanceInvariance()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return 0.8f*mfMinDistance;
 }
 
 float MapPoint::GetMaxDistanceInvariance()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexPos);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return 1.2f*mfMaxDistance;
 }
 
@@ -386,7 +461,10 @@ int MapPoint::PredictScale(const float &currentDist, KeyFrame* pKF)
 {
     float ratio;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexPos);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         ratio = mfMaxDistance/currentDist;
     }
 
@@ -403,7 +481,10 @@ int MapPoint::PredictScale(const float &currentDist, Frame* pF)
 {
     float ratio;
     {
+        auto timer_start = StartTimer();
         unique_lock<mutex> lock(mMutexPos);
+        EndTimerAndPrint(timer_start, "waiting on mutex");
+
         ratio = mfMaxDistance/currentDist;
     }
 
@@ -416,6 +497,21 @@ int MapPoint::PredictScale(const float &currentDist, Frame* pF)
     return nScale;
 }
 
+std::chrono::time_point<std::chrono::high_resolution_clock> MapPoint::StartTimer()
+{
+    auto timer_start = std::chrono::high_resolution_clock::now();
+    return timer_start;
+}
+
+void MapPoint::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
+{
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+    if (duration.count() > 0) {
+        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+    }
+}
 
 
 } //namespace ORB_SLAM

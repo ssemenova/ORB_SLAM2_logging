@@ -97,7 +97,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
 
     //Initialize the Viewer thread and launch
-    if(false)
+    if(true)
     {
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
         mptViewer = new thread(&Viewer::Run, mpViewer);
@@ -491,4 +491,19 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
     return mTrackedKeyPointsUn;
 }
 
+std::chrono::time_point<std::chrono::high_resolution_clock> System::StartTimer()
+{
+    return std::chrono::high_resolution_clock::now();
+}
+
+void System::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
+{
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+
+    cout << print << duration.count() << endl;
+}
+
 } //namespace ORB_SLAM
+

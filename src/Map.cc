@@ -31,7 +31,10 @@ Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
 
 void Map::AddKeyFrame(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mspKeyFrames.insert(pKF);
     if(pKF->mnId>mnMaxKFid)
         mnMaxKFid=pKF->mnId;
@@ -39,13 +42,19 @@ void Map::AddKeyFrame(KeyFrame *pKF)
 
 void Map::AddMapPoint(MapPoint *pMP)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+    
     mspMapPoints.insert(pMP);
 }
 
 void Map::EraseMapPoint(MapPoint *pMP)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+    
     mspMapPoints.erase(pMP);
 
     // TODO: This only erase the pointer.
@@ -54,7 +63,10 @@ void Map::EraseMapPoint(MapPoint *pMP)
 
 void Map::EraseKeyFrame(KeyFrame *pKF)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mspKeyFrames.erase(pKF);
 
     // TODO: This only erase the pointer.
@@ -63,55 +75,82 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
 
 void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mvpReferenceMapPoints = vpMPs;
 }
 
 void Map::InformNewBigChange()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     mnBigChangeIdx++;
 }
 
 int Map::GetLastBigChangeIdx()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mnBigChangeIdx;
 }
 
 vector<KeyFrame*> Map::GetAllKeyFrames()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
 }
 
 vector<MapPoint*> Map::GetAllMapPoints()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return vector<MapPoint*>(mspMapPoints.begin(),mspMapPoints.end());
 }
 
 long unsigned int Map::MapPointsInMap()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mspMapPoints.size();
 }
 
 long unsigned int Map::KeyFramesInMap()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mspKeyFrames.size();
 }
 
 vector<MapPoint*> Map::GetReferenceMapPoints()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mvpReferenceMapPoints;
 }
 
 long unsigned int Map::GetMaxKFid()
 {
+    auto timer_start = StartTimer();
     unique_lock<mutex> lock(mMutexMap);
+    EndTimerAndPrint(timer_start, "waiting on mutex");
+
     return mnMaxKFid;
 }
 
@@ -129,5 +168,22 @@ void Map::clear()
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
 }
+
+std::chrono::time_point<std::chrono::high_resolution_clock> Map::StartTimer()
+{
+    auto timer_start = std::chrono::high_resolution_clock::now();
+    return timer_start;
+}
+
+void Map::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
+{
+    auto timer_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
+    auto tid = std::this_thread::get_id();
+    if (duration.count() > 0) {
+        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+    }
+}
+
 
 } //namespace ORB_SLAM
