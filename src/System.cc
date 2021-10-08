@@ -20,8 +20,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-
-
 #include "System.h"
 #include "Converter.h"
 #include <thread>
@@ -491,19 +489,4 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
     return mTrackedKeyPointsUn;
 }
 
-std::chrono::time_point<std::chrono::high_resolution_clock> System::StartTimer()
-{
-    return std::chrono::high_resolution_clock::now();
-}
-
-void System::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolution_clock> timer_start, std::string print) 
-{
-    auto timer_end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
-    auto tid = std::this_thread::get_id();
-
-    cout << print << duration.count() << endl;
-}
-
 } //namespace ORB_SLAM
-

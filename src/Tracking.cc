@@ -148,6 +148,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
+    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -244,7 +245,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
     auto extractiond = std::chrono::duration_cast<std::chrono::milliseconds>(extractionend - trackstart);
     auto trackd = std::chrono::duration_cast<std::chrono::milliseconds>(trackend - extractionend);
     std::string print = std::string("Sofiya,tracking total,") + to_string(totald.count()) + ",extraction only," + to_string(extractiond.count()) + ",tracking only," + to_string(trackd.count())  + ",timestamp," + to_string(end_timestamp.count()) + "\n";
-    cout << print << endl;
+    cout_stream << print << endl;
 
     return mCurrentFrame.mTcw.clone();
 }
@@ -286,7 +287,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     auto extractiond = std::chrono::duration_cast<std::chrono::milliseconds>(extractionend - trackstart);
     auto trackd = std::chrono::duration_cast<std::chrono::milliseconds>(trackend - extractionend);
     std::string print = std::string("Sofiya,tracking total,") + to_string(totald.count()) + ",extraction only," + to_string(extractiond.count()) + ",tracking only," + to_string(trackd.count())  + ",timestamp," + to_string(end_timestamp.count()) + "\n";
-    cout << print << endl;
+    cout_stream << print << endl;
 
     return mCurrentFrame.mTcw.clone();
 }
@@ -1008,7 +1009,7 @@ bool Tracking::NeedNewKeyFrame()
 
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
     if(mpLocalMapper->isStopped() || mpLocalMapper->stopRequested()) {
-        cout << "Tracking::NeedNewKeyFrame,1,lm freezed by lc" << endl;
+        cout_stream << "Tracking::NeedNewKeyFrame,1,lm freezed by lc" << endl;
         return false;
     }
 
@@ -1016,7 +1017,7 @@ bool Tracking::NeedNewKeyFrame()
 
     // Do not insert keyframes if not enough frames have passed from last relocalisation
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames) {
-        cout << "Tracking::NeedNewKeyFrame,2,not enough frames passed since last relocalization" << endl;
+        cout_stream << "Tracking::NeedNewKeyFrame,2,not enough frames passed since last relocalization" << endl;
         return false;
     }
 
@@ -1083,27 +1084,27 @@ bool Tracking::NeedNewKeyFrame()
                 }
                 else
                 {
-                    cout << "Tracking::NeedNewKeyFrame,3,line 1086" << endl;
+                    cout_stream << "Tracking::NeedNewKeyFrame,3,line 1086" << endl;
                     return false;
                 }
             }
             else
             {
-                cout << "Tracking::NeedNewKeyFrame,4,sensor is monocular??" << endl;
+                cout_stream << "Tracking::NeedNewKeyFrame,4,sensor is monocular??" << endl;
                 return false;
             }
         }
     }
     else
     {
-        cout << "Tracking::NeedNewKeyFrame,5,big if statement," << c1a << "," << c1b << "," << c1c << "," << c2 << endl;
+        cout_stream << "Tracking::NeedNewKeyFrame,5,big if statement," << c1a << "," << c1b << "," << c1c << "," << c2 << endl;
         return false;
     }
 }
 
 void Tracking::CreateNewKeyFrame()
 {
-    cout << "Tracking::CreateNewKeyFrame" << endl;
+    cout_stream << "Tracking::CreateNewKeyFrame" << endl;
     if(!mpLocalMapper->SetNotStop(true))
         return;
 
@@ -1182,7 +1183,7 @@ void Tracking::CreateNewKeyFrame()
     mpLastKeyFrame = pKF;
 
     auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    cout << "Sofiya,created keyframe," << timestamp.count() << endl;
+    cout_stream << "Sofiya,created keyframe," << timestamp.count() << endl;
 }
 
 void Tracking::SearchLocalPoints()

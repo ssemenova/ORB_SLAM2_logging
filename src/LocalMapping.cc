@@ -34,8 +34,7 @@ namespace ORB_SLAM2
 LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
-{
-}
+{}
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
 {
@@ -49,6 +48,8 @@ void LocalMapping::SetTracker(Tracking *pTracker)
 
 void LocalMapping::Run()
 {
+    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/localmapping.txt", std::ofstream::trunc);
+    cout_stream << "localmapping file!" << endl;
 
     mbFinished = false;
 
@@ -97,21 +98,21 @@ void LocalMapping::Run()
                 EndTimerAndPrint(timer_start, "local BA");
 
                 auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-                cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
+                cout_stream << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
 
-                //     auto allKFs = mpMap->GetAllKeyFrames();
-                //     for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
-                //         KeyFrame * currKF = *mit;
-                //         cout << "Connected KFs," << currKF->mnId << ",(";
-                //         auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
+                    auto allKFs = mpMap->GetAllKeyFrames();
+                    for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
+                        KeyFrame * currKF = *mit;
+                        cout_stream << "Connected KFs," << currKF->mnId << ",(";
+                        auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
 
-                //         for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
-                //                 cout << (*nit)->mnId << " ";
-                //         }
-                //         cout << ")" << endl;
+                        for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
+                                cout_stream << (*nit)->mnId << " ";
+                        }
+                        cout_stream << ")" << endl;
 
-                //     }
-                    cout << endl;
+                    }
+                    cout_stream << endl;
 
                 timer_start = StartTimer();
                 // Check redundant local Keyframes
@@ -124,7 +125,7 @@ void LocalMapping::Run()
         }
         else if(Stop())
         {
-            cout << "Stop" << endl;
+            cout_stream << "Stop" << endl;
             // Safe area to stop
             while(isStopped() && !CheckFinish())
             {
@@ -150,7 +151,7 @@ void LocalMapping::Run()
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(lm_end.time_since_epoch());
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(lm_end - lm_start);
         std::string print = std::string("Sofiya,local mapping total,") + to_string(duration.count()) + ",ms,timestamp," + to_string(timestamp.count()) + "\n";
-        cout << print << endl;
+        cout_stream << print << endl;
 
         usleep(3000);
     }
@@ -825,7 +826,7 @@ void LocalMapping::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_re
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
     auto tid = std::this_thread::get_id();
     if (duration.count() > 0) {
-        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+        cout_stream << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
     }
 }
 

@@ -784,7 +784,7 @@ void KeyFrame::EndTimerAndPrint(std::chrono::time_point<std::chrono::high_resolu
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
     auto tid = std::this_thread::get_id();
     if (duration.count() > 0) {
-        cout << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
+        cout_stream << "Sofiya-LMTest," << tid << "," << print << "," << duration.count() << endl;
     }
 }
 

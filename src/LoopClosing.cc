@@ -59,6 +59,9 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 
 void LoopClosing::Run()
 {
+    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
+    cout_stream << "loopclosing file!" << endl;
+
     mbFinished =false;
 
     while(1)
@@ -92,7 +95,7 @@ void LoopClosing::Run()
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end.time_since_epoch());
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end - lc_start);
         std::string print = std::string("Sofiya,loop closing total,") + to_string(duration.count())  + ",ms,timestamp," + to_string(timestamp.count()) + "\n";
-        cout << print << endl;
+        cout_stream << print << endl;
     }
 
     SetFinish();
@@ -105,7 +108,7 @@ void LoopClosing::InsertKeyFrame(KeyFrame *pKF)
     auto timer_end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer_end - timer_start);
     auto tid = std::this_thread::get_id();
-    cout << "Sofiya-LMTest," << tid << ",waiting on mutex," << duration.count() << endl;
+    cout_stream << "Sofiya-LMTest," << tid << ",waiting on mutex," << duration.count() << endl;
 
     if(pKF->mnId!=0)
         mlpLoopKeyFrameQueue.push_back(pKF);
@@ -157,7 +160,7 @@ bool LoopClosing::DetectLoop()
     // Query the database imposing the minimum score
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectLoopCandidates(mpCurrentKF, minScore);
 
-    cout << "loop candidates: " << vpCandidateKFs.size() << endl;
+    cout_stream << "loop candidates: " << vpCandidateKFs.size() << endl;
     // If there are no loop candidates, just add new keyframe and return false
     if(vpCandidateKFs.empty())
     {
@@ -694,11 +697,9 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
             // Correct keyframes starting at map first keyframe
             list<KeyFrame*> lpKFtoCheck(mpMap->mvpKeyFrameOrigins.begin(),mpMap->mvpKeyFrameOrigins.end());
 
-            cout << "lpKFtoCheck, ";
             while(!lpKFtoCheck.empty())
             {
                 KeyFrame* pKF = lpKFtoCheck.front();
-                cout << pKF->mnId << " ";
                 const set<KeyFrame*> sChilds = pKF->GetChilds();
                 cv::Mat Twc = pKF->GetPoseInverse();
                 for(set<KeyFrame*>::const_iterator sit=sChilds.begin();sit!=sChilds.end();sit++)
@@ -718,11 +719,9 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
                 pKF->SetPose(pKF->mTcwGBA);
                 lpKFtoCheck.pop_front();
             }
-            cout << endl;
 
             // Correct MapPoints
             const vector<MapPoint*> vpMPs = mpMap->GetAllMapPoints();
-            cout << "vpMPs ";
             for(size_t i=0; i<vpMPs.size(); i++)
             {
                 MapPoint* pMP = vpMPs[i];
@@ -735,7 +734,6 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 
                     // If optimized by Global BA, just update
                     pMP->SetWorldPos(pMP->mPosGBA);
-                    cout << pMP->mnId << " ";
                 }
                 else
                 {
@@ -758,7 +756,6 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
                     pMP->SetWorldPos(Rwc*Xc+twc);
                 }
             }
-            cout << endl;
 
             mpMap->InformNewBigChange();
 
@@ -774,16 +771,16 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
     auto allKFs = mpMap->GetAllKeyFrames();
     for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
         KeyFrame * currKF = *mit;
-        cout << "GBA Connected KFs," << currKF->mnId << ",(";
+        cout_stream << "GBA Connected KFs," << currKF->mnId << ",(";
         auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
 
         for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
-            cout << (*nit)->mnId << " ";
+            cout_stream << (*nit)->mnId << " ";
         }
-        cout << ")" << endl;
+        cout_stream << ")" << endl;
 
     }
-    cout << endl;
+    cout_stream << endl;
 }
 
 void LoopClosing::RequestFinish()
