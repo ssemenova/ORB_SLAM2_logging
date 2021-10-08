@@ -768,19 +768,19 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
         mbRunningGBA = false;
     }
 
-    auto allKFs = mpMap->GetAllKeyFrames();
-    for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
-        KeyFrame * currKF = *mit;
-        cout_stream << "GBA Connected KFs," << currKF->mnId << ",(";
-        auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
+    // auto allKFs = mpMap->GetAllKeyFrames();
+    // for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
+    //     KeyFrame * currKF = *mit;
+    //     cout << "GBA Connected KFs," << currKF->mnId << ",(";
+    //     auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
 
-        for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
-            cout_stream << (*nit)->mnId << " ";
-        }
-        cout_stream << ")" << endl;
+    //     for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
+    //         cout << (*nit)->mnId << " ";
+    //     }
+    //     cout << ")" << endl;
 
-    }
-    cout_stream << endl;
+    // }
+    // cout << endl;
 }
 
 void LoopClosing::RequestFinish()
