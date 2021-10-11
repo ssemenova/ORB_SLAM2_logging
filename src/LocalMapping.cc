@@ -48,7 +48,8 @@ void LocalMapping::SetTracker(Tracking *pTracker)
 
 void LocalMapping::Run()
 {
-    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/localmapping.txt", std::ofstream::trunc);
+    // cout_stream.open("/home/nvidia/ORB_SLAM2/localmapping.txt", std::ofstream::trunc);
+    cout_stream.open("/home/nvidia/ORB_SLAM2/localmapping.txt", std::ofstream::trunc);
     cout_stream << "localmapping file!" << endl;
 
     mbFinished = false;
@@ -99,6 +100,7 @@ void LocalMapping::Run()
 
                 auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
                 cout_stream << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
+                cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
 
                     auto allKFs = mpMap->GetAllKeyFrames();
                     for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){

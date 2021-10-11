@@ -148,6 +148,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
+    // cout_stream.open("/home/nvidia/ORB_SLAM2/tracking.txt", std::ofstream::trunc);
     cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
 }
 
@@ -437,10 +438,13 @@ void Tracking::Track()
                 bOK = TrackLocalMap();
         }
 
-        if(bOK)
+        if(bOK) {
             mState = OK;
-        else
+        } else {
             mState=LOST;
+            auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+            cout << "mstate = lost, will relocalize next round," << timestamp.count() << endl;
+        }
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -1065,6 +1069,16 @@ bool Tracking::NeedNewKeyFrame()
     const bool c1c =  mSensor!=System::MONOCULAR && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
     const bool c2 = ((mnMatchesInliers<nRefMatches*thRefRatio|| bNeedToInsertClose) && mnMatchesInliers>15);
+
+    cout_stream << "c1a," << (mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames) << endl;
+
+    cout_stream << "c1b," << mCurrentFrame.mnId << "," << (mnLastKeyFrameId+mMinFrames) << "," << bLocalMappingIdle << endl;
+    
+    cout_stream << "c1c," << (mSensor!=System::MONOCULAR) << "," << (mnMatchesInliers<nRefMatches*0.25) << "," << bNeedToInsertClose << endl;
+    
+    cout_stream << "c2," << (mnMatchesInliers<nRefMatches*thRefRatio) << "," << bNeedToInsertClose << "," << (mnMatchesInliers>15) << endl;
+    
+    cout_stream << "nTrackedClose," << (nTrackedClose < 100) << ",nNonTrackedClose," << (nNonTrackedClose>70) << endl;
 
     if((c1a||c1b||c1c)&&c2)
     {
