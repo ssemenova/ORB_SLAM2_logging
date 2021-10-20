@@ -148,8 +148,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
-    // cout_stream.open("/home/nvidia/ORB_SLAM2/tracking.txt", std::ofstream::trunc);
-    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
+    cout_stream.open("/home/nvidia/ORB_SLAM2/tracking.txt", std::ofstream::trunc);
+    // cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -1070,15 +1070,20 @@ bool Tracking::NeedNewKeyFrame()
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
     const bool c2 = ((mnMatchesInliers<nRefMatches*thRefRatio|| bNeedToInsertClose) && mnMatchesInliers>15);
 
-    cout_stream << "c1a," << (mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames) << endl;
+    bool c1b_without_lmidle = mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames;
 
-    cout_stream << "c1b," << mCurrentFrame.mnId << "," << (mnLastKeyFrameId+mMinFrames) << "," << bLocalMappingIdle << endl;
+    // cout_stream << "c1a," << (mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames) << endl;
+
+    // cout_stream << "c1b," << mCurrentFrame.mnId << "," << (mnLastKeyFrameId+mMinFrames) << "," << bLocalMappingIdle << endl;
     
-    cout_stream << "c1c," << (mSensor!=System::MONOCULAR) << "," << (mnMatchesInliers<nRefMatches*0.25) << "," << bNeedToInsertClose << endl;
+    // cout_stream << "c1c," << (mSensor!=System::MONOCULAR) << "," << (mnMatchesInliers<nRefMatches*0.25) << "," << bNeedToInsertClose << endl;
     
-    cout_stream << "c2," << (mnMatchesInliers<nRefMatches*thRefRatio) << "," << bNeedToInsertClose << "," << (mnMatchesInliers>15) << endl;
+    // cout_stream << "c2," << (mnMatchesInliers<nRefMatches*thRefRatio) << "," << bNeedToInsertClose << "," << (mnMatchesInliers>15) << endl;
     
-    cout_stream << "nTrackedClose," << (nTrackedClose < 100) << ",nNonTrackedClose," << (nNonTrackedClose>70) << endl;
+    // cout_stream << "nTrackedClose," << (nTrackedClose < 100) << ",nNonTrackedClose," << (nNonTrackedClose>70) << endl;
+
+    cout_stream << "want to insert but can't," << ((c1a || c1b_without_lmidle || c1c) & c2) << "," << !bLocalMappingIdle << endl;
+    // Should plot 1 if first number is 1 and second number is 1
 
     if((c1a||c1b||c1c)&&c2)
     {
@@ -1104,7 +1109,7 @@ bool Tracking::NeedNewKeyFrame()
             }
             else
             {
-                cout_stream << "Tracking::NeedNewKeyFrame,4,sensor is monocular??" << endl;
+                cout_stream << "sniped at last minute" << endl;
                 return false;
             }
         }
@@ -1395,6 +1400,7 @@ void Tracking::UpdateLocalKeyFrames()
     {
         mpReferenceKF = pKFmax;
         mCurrentFrame.mpReferenceKF = mpReferenceKF;
+        cout_stream << "reference KF set to," << mpReferenceKF->mnId << endl;
     }
 }
 

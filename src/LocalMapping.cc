@@ -169,7 +169,7 @@ void LocalMapping::Run()
 void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
     auto time_start = StartTimer();
-unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock<mutex> lock(mMutexNewKFs);
     EndTimerAndPrint(time_start, "waiting on mutex");
 
     mlNewKeyFrames.push_back(pKF);
