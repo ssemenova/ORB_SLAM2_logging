@@ -97,35 +97,36 @@ void LocalMapping::Run()
                 if(mpMap->KeyFramesInMap()>2)
                     Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
                 EndTimerAndPrint(timer_start, "local BA");
+            }
 
-                auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-                cout_stream << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
-                cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
+            auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+            // cout_stream << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
+            cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
 
-                    auto allKFs = mpMap->GetAllKeyFrames();
-                    for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
-                        KeyFrame * currKF = *mit;
-                        cout_stream << "Connected KFs," << currKF->mnId << ",(";
-                        cout << "Connected KFs," << currKF->mnId << ",(";
-                        auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
+            auto allKFs = mpMap->GetAllKeyFrames();
+                for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
+                    KeyFrame * currKF = *mit;
+                //    cout_stream << "Connected KFs," << currKF->mnId << ",(";
+                    cout << "Connected KFs," << currKF->mnId << ",(";
+                    auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
 
-                        for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
-                                cout_stream << (*nit)->mnId << " ";
-                                cout << (*nit)->mnId << " ";
-
-                        }
-                        cout_stream << ")" << endl;
-                        cout << ")" << endl;
+                    for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
+                        //    cout_stream << (*nit)->mnId << " ";
+                            cout << (*nit)->mnId << " ";
 
                     }
-                    cout_stream << endl;
-                    cout << endl;
+                //    cout_stream << ")" << endl;
+                    cout << ")" << endl;
 
-                timer_start = StartTimer();
-                // Check redundant local Keyframes
-                KeyFrameCulling();
-                EndTimerAndPrint(timer_start, "keyframe culling");
-            }
+                }
+            //    cout_stream << endl;
+                cout << endl;
+
+            timer_start = StartTimer();
+            // Check redundant local Keyframes
+            KeyFrameCulling();
+            EndTimerAndPrint(timer_start, "keyframe culling");
+            
             timer_start = StartTimer();
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
             EndTimerAndPrint(timer_start, "insert keyframe into map");

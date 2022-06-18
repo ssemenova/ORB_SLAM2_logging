@@ -148,7 +148,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
-    cout_stream.open("/home/nvidia/ORB_SLAM2/tracking.txt", std::ofstream::trunc);
+    cout_stream.open("/home/nvidia/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
     // cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
 }
 
@@ -1132,6 +1132,7 @@ void Tracking::CreateNewKeyFrame()
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;
 
+    int newMPsCount = 0;
     if(mSensor!=System::MONOCULAR)
     {
         mCurrentFrame.UpdatePoseMatrices();
@@ -1150,11 +1151,11 @@ void Tracking::CreateNewKeyFrame()
             }
         }
 
+        int nPoints = 0;
         if(!vDepthIdx.empty())
         {
             sort(vDepthIdx.begin(),vDepthIdx.end());
 
-            int nPoints = 0;
             for(size_t j=0; j<vDepthIdx.size();j++)
             {
                 int i = vDepthIdx[j].second;
@@ -1180,6 +1181,7 @@ void Tracking::CreateNewKeyFrame()
                     pNewMP->UpdateNormalAndDepth();
                     mpMap->AddMapPoint(pNewMP);
 
+                    newMPsCount++;
                     mCurrentFrame.mvpMapPoints[i]=pNewMP;
                     nPoints++;
                 }
@@ -1192,6 +1194,9 @@ void Tracking::CreateNewKeyFrame()
                     break;
             }
         }
+    set<KeyFrame*> connectedKFs = pKF->GetConnectedKeyFrames();
+    cout_stream << "sofiya stats," << pKF->mnId << "," << mnMatchesInliers << "," << newMPsCount << "," << connectedKFs.size() << endl;
+
     }
 
     mpLocalMapper->InsertKeyFrame(pKF);
@@ -1203,6 +1208,67 @@ void Tracking::CreateNewKeyFrame()
 
     auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
     cout_stream << "Sofiya,created keyframe," << timestamp.count() << endl;
+
+
+
+    // // Sofiya: Log info about keyframe, used for Atlas
+    // // so we can modify the rate of keyframe creation
+    // {
+    //     float connectedMPs = 0;
+    //     float newMPs = 0;
+    //     float closestKFMatches = 0;
+    //     int totalNewConnections = 0;
+    //     map<KeyFrame *,int> KFcounter;
+    //     // Find connections between new keyframe and existing mappoints in map
+
+    //     // Compute Bags of Words structures ... might not be necessary
+    //     // pKF->ComputeBoW();
+
+    //     // For all map points in keyframe check in which other keyframes they are seen
+    //     // Increase counter for those keyframes
+    //     // Similar logic to KeyFrame::UpdateConnections
+    //     // except: don't update the actual map, and check for if the MP is
+    //     // in the map (not new with this KF) before counting
+    //     const vector<MapPoint*> vpMapPointMatches = pKF->GetMapPoints();
+    //     for(size_t i=0; i<vpMapPointMatches.size(); i++) {
+    //         MapPoint* pMP = vpMapPointMatches[i];
+    //         if(!pMP || pMP->isBad()) {
+    //             continue;
+    //         }
+
+    //         if(!pMP->IsInKeyFrame(mCurrentFrame->mnId)) {
+    //             // If mappoint is in the global map
+    //             MapPoint * newMP = nullptr;
+    //             newMP = mpMap->RetrieveMapPoint(pMP->lmMnId);
+
+
+    //             if (newMP != nullptr) {
+    //                 map<KeyFrame*,size_t> observations = newMP->GetObservations();
+    //                 for(auto mit=observations.begin(), mend=observations.end(); mit!=mend; mit++) {
+    //                     if(mit->first->mnId==mCurrentFrame->mnId)
+    //                         continue;
+    //                     KFcounter[mit->first]++;
+    //                 }
+    //                 connectedMPs += 1;
+    //             }
+    //         } else {
+    //             // Mappoint is new, so not seen by any KFs yet
+    //             newMPs += 1;
+    //             continue;
+    //         }
+    //     }
+    //     for (auto it = KFcounter.begin(); it != KFcounter.end(); it++) {
+    //         if (it->second > closestKFMatches) {
+    //             // Find keyframe that is the most similar to current keyframe
+    //             closestKFMatches = it->second;
+    //         }
+    //     }
+    //     // amount of mappoints new KF shares with closest match KF / amount of all mappoints new KF has
+    //     float similarityToClosestKF = closestKFMatches / (newMPs + connectedMPs);
+
+    //     cout << "connectivity stats," << newMPs << "," << connectedMPs << "," << similarityToClosestKF << "," << KFcounter.size() << endl;
+    // }
+
 }
 
 void Tracking::SearchLocalPoints()
