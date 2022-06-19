@@ -59,8 +59,8 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 
 void LoopClosing::Run()
 {
-    // cout_stream.open("/home/nvidia/ORB_SLAM2/loopclosing.txt", std::ofstream::trunc);
-    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
+    cout_stream.open("/home/nvidia/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
+    //cout_stream.open("/home/sofiya/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
     cout_stream << "loopclosing file!" << endl;
 
     mbFinished =false;

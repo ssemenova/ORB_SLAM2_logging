@@ -1083,6 +1083,8 @@ bool Tracking::NeedNewKeyFrame()
     // cout_stream << "nTrackedClose," << (nTrackedClose < 100) << ",nNonTrackedClose," << (nNonTrackedClose>70) << endl;
 
     cout_stream << "want to insert but can't," << ((c1a || c1b_without_lmidle || c1c) & c2) << "," << !bLocalMappingIdle << endl;
+
+
     // Should plot 1 if first number is 1 and second number is 1
 
     if((c1a||c1b||c1c)&&c2)
@@ -1091,6 +1093,7 @@ bool Tracking::NeedNewKeyFrame()
         // Otherwise send a signal to interrupt BA
         if(bLocalMappingIdle)
         {
+            cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
             return true;
         }
         else
@@ -1099,24 +1102,23 @@ bool Tracking::NeedNewKeyFrame()
             if(mSensor!=System::MONOCULAR)
             {
                 if(mpLocalMapper->KeyframesInQueue()<3) {
+                    cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
                     return true;
                 }
                 else
                 {
-                    cout_stream << "Tracking::NeedNewKeyFrame,3,line 1086" << endl;
                     return false;
                 }
             }
             else
             {
-                cout_stream << "sniped at last minute" << endl;
                 return false;
             }
         }
     }
     else
     {
-        cout_stream << "Tracking::NeedNewKeyFrame,5,big if statement," << c1a << "," << c1b << "," << c1c << "," << c2 << endl;
+        // cout_stream << "Tracking::NeedNewKeyFrame,5,big if statement," << c1a << "," << c1b << "," << c1c << "," << c2 << endl;
         return false;
     }
 }
