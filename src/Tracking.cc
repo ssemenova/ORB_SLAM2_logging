@@ -1064,7 +1064,7 @@ bool Tracking::NeedNewKeyFrame()
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b = (mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames && bLocalMappingIdle);
+    const bool c1b = (mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames);// && bLocalMappingIdle);
     //Condition 1c: tracking is weak
     const bool c1c =  mSensor!=System::MONOCULAR && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
@@ -1091,30 +1091,31 @@ bool Tracking::NeedNewKeyFrame()
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
-        if(bLocalMappingIdle)
-        {
-            cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
-            return true;
-        }
-        else
-        {
-            mpLocalMapper->InterruptBA();
-            if(mSensor!=System::MONOCULAR)
-            {
+        // if(bLocalMappingIdle)
+        // {
+        //     cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
+        //     return true;
+        // }
+        // else
+        // {
+        //     mpLocalMapper->InterruptBA();
+        //     if(mSensor!=System::MONOCULAR)
+        //     {
                 if(mpLocalMapper->KeyframesInQueue()<3) {
                     cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
+                    cout_stream << "sofiya neednewkeyframe mp stats" << nRefMatches << "," << nTrackedClose << "," << nNonTrackedClose << endl;
                     return true;
                 }
                 else
                 {
                     return false;
                 }
-            }
-            else
-            {
-                return false;
-            }
-        }
+        //     }
+        //     else
+        //     {
+        //         return false;
+        //     }
+        // }
     }
     else
     {
@@ -1135,6 +1136,8 @@ void Tracking::CreateNewKeyFrame()
     mCurrentFrame.mpReferenceKF = pKF;
 
     int newMPsCount = 0;
+    map<KeyFrame *,int> KFcounter;
+    float connMPSpread = 0;
     if(mSensor!=System::MONOCULAR)
     {
         mCurrentFrame.UpdatePoseMatrices();
@@ -1182,13 +1185,19 @@ void Tracking::CreateNewKeyFrame()
                     pNewMP->ComputeDistinctiveDescriptors();
                     pNewMP->UpdateNormalAndDepth();
                     mpMap->AddMapPoint(pNewMP);
-
                     newMPsCount++;
                     mCurrentFrame.mvpMapPoints[i]=pNewMP;
                     nPoints++;
                 }
                 else
                 {
+                    map<KeyFrame*,size_t> observations = pMP->GetObservations();
+                    for(auto mit=observations.begin(), mend=observations.end(); mit!=mend; mit++) {
+                        if(mit->first->mnId==pKF->mnId)
+                            continue;
+                        KFcounter[mit->first]++;
+                    }
+
                     nPoints++;
                 }
 
@@ -1196,8 +1205,23 @@ void Tracking::CreateNewKeyFrame()
                     break;
             }
         }
-    set<KeyFrame*> connectedKFs = pKF->GetConnectedKeyFrames();
-    cout_stream << "sofiya stats," << pKF->mnId << "," << mnMatchesInliers << "," << newMPsCount << "," << connectedKFs.size() << endl;
+
+        cout <<"connMPSpread,";
+        for (auto it=KFcounter.begin(); it!=KFcounter.end(); it++) {
+            float trackedMapPointsInKF = static_cast<float>(it->first->GetMapPoints().size());
+            connMPSpread += it->second / trackedMapPointsInKF;
+            cout<<"(kf"<< it->first->mnId << ",match" << it->second << ",total" << trackedMapPointsInKF << "), ";
+        }
+        cout << endl;
+        connMPSpread = KFcounter.size() == 0 ? 0 : connMPSpread / KFcounter.size();
+
+    float pastConnectedKFsAvg = 0;
+    for (int i = 0; i < pastConnectedKFs.size(); i++) {
+        pastConnectedKFsAvg += pastConnectedKFs[i];
+    }
+    pastConnectedKFsAvg = pastConnectedKFsAvg / static_cast<float>(pastConnectedKFs.size());
+
+    cout_stream << "sofiya stats," << pKF->mnId << "," << mnMatchesInliers << "," << newMPsCount << ","<< pastConnectedKFsAvg << "," << connMPSpread << endl;
 
     }
 
@@ -1211,6 +1235,10 @@ void Tracking::CreateNewKeyFrame()
     auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
     cout_stream << "Sofiya,created keyframe," << timestamp.count() << endl;
 
+    if (pastConnectedKFs.size() == 10) {
+        pastConnectedKFs.erase(pastConnectedKFs.begin());
+    }
+    pastConnectedKFs.push_back(static_cast<float>(KFcounter.size()));
 
 
     // // Sofiya: Log info about keyframe, used for Atlas

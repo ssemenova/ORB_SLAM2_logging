@@ -214,6 +214,8 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+
+    std::vector<int> pastConnectedKFs;
 };
 
 } //namespace ORB_SLAM
