@@ -40,9 +40,9 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
 
 int main(int argc, char **argv)
 {
-    if(argc != 6)
+    if(argc != 7)
     {
-        cerr << endl << "Usage: ./stereo_euroc path_to_vocabulary path_to_settings path_to_left_folder path_to_right_folder path_to_times_file" << endl;
+        cerr << endl << "Usage: ./stereo_euroc path_to_vocabulary path_to_settings path_to_left_folder path_to_right_folder path_to_times_file ratio" << endl;
         return 1;
     }
 
@@ -104,8 +104,7 @@ int main(int argc, char **argv)
 
     const int nImages = vstrImageLeft.size();
 
-    const int nImages = vstrImageLeft.size();
-    const float ratio = stof(argv[4]);
+    const float ratio = stof(argv[6]);
     cout << "sofiya ratio set to " << ratio << endl;
 
 
