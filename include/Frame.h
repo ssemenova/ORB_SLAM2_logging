@@ -187,7 +187,9 @@ public:
 
     static bool mbInitialComputations;
 
-
+    // Sofiya: Temporarily save this data between Tracking::NeedNewKF
+    // and Tracking::CreateNewKF. See comments in these functions.
+    vector<pair<float,int> > vDepthIdx;
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.

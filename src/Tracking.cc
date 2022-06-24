@@ -45,10 +45,11 @@ using namespace std;
 namespace ORB_SLAM2
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
+Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const float RATIO_NEEDNEWKEYFRAME):
     mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
-    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
+    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0),
+    RATIO_NEEDNEWKEYFRAME(RATIO_NEEDNEWKEYFRAME)
 {
     // Load camera parameters from settings file
 
@@ -1072,22 +1073,62 @@ bool Tracking::NeedNewKeyFrame()
 
     bool c1b_without_lmidle = mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames;
 
+    float ratio = 0;
+    int nNew = 0;
+    {
+        // find new mappoints but don't insert
+        mCurrentFrame.UpdatePoseMatrices();
+        // We sort points by the measured depth by the stereo/RGBD sensor.
+        // We create all those MapPoints whose depth < mThDepth.
+        // If there are less than 100 close points we create the 100 closest.
+        vector<pair<float,int> > vDepthIdx;
+        vDepthIdx.reserve(mCurrentFrame.N);
+        for(int i=0; i<mCurrentFrame.N; i++)
+        {
+            float z = mCurrentFrame.mvDepth[i];
+            if(z>0)
+            {
+                vDepthIdx.push_back(make_pair(z,i));
+            }
+        }
+         // Sofiya: Sort and save to frame so this work isn't duplicated
+         // in CreateNewKeyFrame
+        sort(vDepthIdx.begin(),vDepthIdx.end());
+        mCurrentFrame.vDepthIdx = vDepthIdx;
+        int nPoints = 0;
+        for(size_t j=0; j<vDepthIdx.size();j++)
+        {
+            int i = vDepthIdx[j].second;
+            MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+            if(!pMP || pMP->Observations()<1)
+            {
+                nNew++;
+            }
+            nPoints++;
+
+            if(vDepthIdx[j].first>mThDepth && nPoints>100)
+            break;
+        }
+    }
+
+    ratio = static_cast<float>(mnMatchesInliers) / static_cast<float>(nNew);
     // cout_stream << "c1a," << (mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames) << endl;
 
     // cout_stream << "c1b," << mCurrentFrame.mnId << "," << (mnLastKeyFrameId+mMinFrames) << "," << bLocalMappingIdle << endl;
-    
+
     // cout_stream << "c1c," << (mSensor!=System::MONOCULAR) << "," << (mnMatchesInliers<nRefMatches*0.25) << "," << bNeedToInsertClose << endl;
-    
+
     // cout_stream << "c2," << (mnMatchesInliers<nRefMatches*thRefRatio) << "," << bNeedToInsertClose << "," << (mnMatchesInliers>15) << endl;
-    
+
     // cout_stream << "nTrackedClose," << (nTrackedClose < 100) << ",nNonTrackedClose," << (nNonTrackedClose>70) << endl;
 
-    cout_stream << "want to insert but can't," << ((c1a || c1b_without_lmidle || c1c) & c2) << "," << !bLocalMappingIdle << endl;
-
+    // cout_stream << "want to insert but can't," << ((c1a || c1b_without_lmidle || c1c) & c2) << "," << !bLocalMappingIdle << endl;
 
     // Should plot 1 if first number is 1 and second number is 1
+    cout_stream << "sofiya ratio stats for all," << ratio << "," << mnMatchesInliers << "," << nNew << endl;
 
-    if((c1a||c1b||c1c)&&c2)
+    // if((c1a||c1b||c1c)&&c2)
+    if (((((c1a || c1b) && ratio > RATIO_NEEDNEWKEYFRAME) || c1c)  && c2))
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
@@ -1102,7 +1143,7 @@ bool Tracking::NeedNewKeyFrame()
         //     if(mSensor!=System::MONOCULAR)
         //     {
                 if(mpLocalMapper->KeyframesInQueue()<3) {
-                    cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << c2 << endl;
+                    cout_stream << "sofiya neednewkeyframe stats," << c1c << "," << (ratio > RATIO_NEEDNEWKEYFRAME) << "," << c2 << endl;
                     cout_stream << "sofiya neednewkeyframe mp stats" << nRefMatches << "," << nTrackedClose << "," << nNonTrackedClose << endl;
                     return true;
                 }
@@ -1138,28 +1179,32 @@ void Tracking::CreateNewKeyFrame()
     int newMPsCount = 0;
     map<KeyFrame *,int> KFcounter;
     float connMPSpread = 0;
+    int numConnectedKFs = 0;
     if(mSensor!=System::MONOCULAR)
     {
         mCurrentFrame.UpdatePoseMatrices();
 
+        // Sofiya: Commented out because this code is in NeedNewKeyFrame now
+        // so it can know how many new mappoints would be created before
+        // actually creating them.
         // We sort points by the measured depth by the stereo/RGBD sensor.
         // We create all those MapPoints whose depth < mThDepth.
         // If there are less than 100 close points we create the 100 closest.
-        vector<pair<float,int> > vDepthIdx;
-        vDepthIdx.reserve(mCurrentFrame.N);
-        for(int i=0; i<mCurrentFrame.N; i++)
-        {
-            float z = mCurrentFrame.mvDepth[i];
-            if(z>0)
-            {
-                vDepthIdx.push_back(make_pair(z,i));
-            }
-        }
-
+        // vector<pair<float,int> > vDepthIdx;
+        // vDepthIdx.reserve(mCurrentFrame.N);
+        // for(int i=0; i<mCurrentFrame.N; i++)
+        // {
+        //     float z = mCurrentFrame.mvDepth[i];
+        //     if(z>0)
+        //     {
+        //         vDepthIdx.push_back(make_pair(z,i));
+        //     }
+        // }
+        auto vDepthIdx = mCurrentFrame.vDepthIdx;
         int nPoints = 0;
         if(!vDepthIdx.empty())
         {
-            sort(vDepthIdx.begin(),vDepthIdx.end());
+            // sort(vDepthIdx.begin(),vDepthIdx.end());
 
             for(size_t j=0; j<vDepthIdx.size();j++)
             {
@@ -1206,14 +1251,17 @@ void Tracking::CreateNewKeyFrame()
             }
         }
 
-        cout <<"connMPSpread,";
-        for (auto it=KFcounter.begin(); it!=KFcounter.end(); it++) {
-            float trackedMapPointsInKF = static_cast<float>(it->first->GetMapPoints().size());
+    cout_stream <<"connMPSpread,";
+    for (auto it=KFcounter.begin(); it!=KFcounter.end(); it++) {
+        float trackedMapPointsInKF = static_cast<float>(it->first->GetMapPoints().size());
+        if (it->second > 10) {
             connMPSpread += it->second / trackedMapPointsInKF;
-            cout<<"(kf"<< it->first->mnId << ",match" << it->second << ",total" << trackedMapPointsInKF << "), ";
+            cout_stream<<"(kf"<< it->first->mnId << ",match" << it->second << ",total" << trackedMapPointsInKF << "), ";
+            numConnectedKFs++;
         }
-        cout << endl;
-        connMPSpread = KFcounter.size() == 0 ? 0 : connMPSpread / KFcounter.size();
+    }
+    cout_stream << endl;
+    connMPSpread = numConnectedKFs == 0 ? 0 : connMPSpread / numConnectedKFs;
 
     float pastConnectedKFsAvg = 0;
     for (int i = 0; i < pastConnectedKFs.size(); i++) {
