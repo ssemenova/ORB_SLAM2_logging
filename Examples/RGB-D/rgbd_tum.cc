@@ -33,13 +33,13 @@
 using namespace std;
 
 void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesRGB,
-                vector<string> &vstrImageFilenamesD, vector<double> &vTimestamps);
+                vector<string> &vstrImageFilenamesD, vector<double> &vTimestamps ratio);
 
 int main(int argc, char **argv)
 {
-    if(argc != 5)
+    if(argc != 6)
     {
-        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association" << endl;
+        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association ratio" << endl;
         return 1;
     }
 
@@ -63,8 +63,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    const float ratio = stof(argv[5]);
+    cout << "sofiya ratio set to " << ratio << endl;
+
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::RGBD,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::RGBD, ratio, true);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
