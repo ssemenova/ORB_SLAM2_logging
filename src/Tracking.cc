@@ -200,9 +200,23 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
         }
     }
 
+
+    auto trackstart = std::chrono::high_resolution_clock::now();
+
     mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
 
+    auto extractionend = std::chrono::high_resolution_clock::now();
+
     Track();
+
+    auto trackend = std::chrono::high_resolution_clock::now();
+    auto end_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(trackend.time_since_epoch());
+
+    auto totald = std::chrono::duration_cast<std::chrono::milliseconds>(trackend - trackstart);
+    auto extractiond = std::chrono::duration_cast<std::chrono::milliseconds>(extractionend - trackstart);
+    auto trackd = std::chrono::duration_cast<std::chrono::milliseconds>(trackend - extractionend);
+    std::string print = std::string("Sofiya,tracking total,") + to_string(totald.count()) + ",extraction only," + to_string(extractiond.count()) + ",tracking only," + to_string(trackd.count())  + ",timestamp," + to_string(end_timestamp.count()) + "\n";
+    cout_stream << print << endl;
 
     return mCurrentFrame.mTcw.clone();
 }

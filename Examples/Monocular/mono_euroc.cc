@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
-
+#include "opencv2/imgcodecs/legacy/constants_c.h"
 #include <unistd.h>
 #include <stdio.h>
 
