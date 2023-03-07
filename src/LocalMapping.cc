@@ -102,24 +102,24 @@ void LocalMapping::Run()
                 cout_stream << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
                 cout << "Sofiya,New KF ID," << mpCurrentKeyFrame->mnId << ",timestamp," << timestamp.count() << endl;
 
-                    auto allKFs = mpMap->GetAllKeyFrames();
-                    for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
-                        KeyFrame * currKF = *mit;
-                        cout_stream << "Connected KFs," << currKF->mnId << ",(";
-                        cout << "Connected KFs," << currKF->mnId << ",(";
-                        auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
+                    // auto allKFs = mpMap->GetAllKeyFrames();
+                    // for (auto mit=allKFs.begin(), mend=allKFs.end(); mit != mend; mit++){
+                    //     KeyFrame * currKF = *mit;
+                    //     cout_stream << "Connected KFs," << currKF->mnId << ",(";
+                    //     cout << "Connected KFs," << currKF->mnId << ",(";
+                    //     auto connectedKFs = currKF->GetVectorCovisibleKeyFrames();
 
-                        for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
-                                cout_stream << (*nit)->mnId << " ";
-                                cout << (*nit)->mnId << " ";
+                    //     for(auto nit=connectedKFs.begin(), nend=connectedKFs.end(); nit != nend; nit++) {
+                    //             cout_stream << (*nit)->mnId << " ";
+                    //             cout << (*nit)->mnId << " ";
 
-                        }
-                        cout_stream << ")" << endl;
-                        cout << ")" << endl;
+                    //     }
+                    //     cout_stream << ")" << endl;
+                    //     cout << ")" << endl;
 
-                    }
-                    cout_stream << endl;
-                    cout << endl;
+                    // }
+                    // cout_stream << endl;
+                    // cout << endl;
 
                 timer_start = StartTimer();
                 // Check redundant local Keyframes
