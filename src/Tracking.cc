@@ -150,7 +150,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
 
-    cout_stream.open("/home/nvidia/ORB_SLAM2/tracking.txt", std::ofstream::trunc);
+    cout_stream.open("/home/sofiya/char/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
     // cout_stream.open("/home/sofiya/ORB_SLAM2_logging/tracking.txt", std::ofstream::trunc);
 }
 
@@ -201,7 +201,6 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
             cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
         }
     }
-
 
     auto trackstart = std::chrono::high_resolution_clock::now();
 
@@ -1423,6 +1422,8 @@ void Tracking::UpdateLocalKeyFrames()
 bool Tracking::Relocalization()
 {
     cout << "Begin relocalization" << endl;
+    auto relocstart = std::chrono::high_resolution_clock::now();
+    
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
@@ -1572,6 +1573,11 @@ bool Tracking::Relocalization()
         }
     }
 
+    auto relocend = std::chrono::high_resolution_clock::now();
+    auto total_reloc = std::chrono::duration_cast<std::chrono::milliseconds>(relocend - relocstart);
+    std::string print = std::string("Sofiya,relocalization total,") + to_string(total_reloc.count());
+    cout_stream << print << endl;
+    
     if(!bMatch)
     {
         return false;
@@ -1581,7 +1587,6 @@ bool Tracking::Relocalization()
         mnLastRelocFrameId = mCurrentFrame.mnId;
         return true;
     }
-
 }
 
 void Tracking::Reset()

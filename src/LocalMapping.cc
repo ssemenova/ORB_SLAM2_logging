@@ -49,7 +49,7 @@ void LocalMapping::SetTracker(Tracking *pTracker)
 void LocalMapping::Run()
 {
     // cout_stream.open("/home/nvidia/ORB_SLAM2/localmapping.txt", std::ofstream::trunc);
-    cout_stream.open("/home/nvidia/ORB_SLAM2/localmapping.txt", std::ofstream::trunc);
+    cout_stream.open("/home/sofiya/char/ORB_SLAM2_logging/localmapping.txt", std::ofstream::trunc);
     cout_stream << "localmapping file!" << endl;
 
     mbFinished = false;
@@ -138,8 +138,10 @@ void LocalMapping::Run()
             {
                 usleep(3000);
             }
-            if(CheckFinish())
+            if(CheckFinish()) {
+                EndTimerAndPrint(lm_start, "local mapping total");
                 break;
+            }
         }
 
         auto timer_start = StartTimer();
@@ -151,14 +153,12 @@ void LocalMapping::Run()
         SetAcceptKeyFrames(true);
         EndTimerAndPrint(timer_start, "set accept keyframes");
 
-        if(CheckFinish())
+        if(CheckFinish()) {
+            EndTimerAndPrint(lm_start, "local mapping total");
             break;
+        }
 
-        auto lm_end = std::chrono::high_resolution_clock::now();
-        auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(lm_end.time_since_epoch());
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(lm_end - lm_start);
-        std::string print = std::string("Sofiya,local mapping total,") + to_string(duration.count()) + ",ms,timestamp," + to_string(timestamp.count()) + "\n";
-        cout_stream << print << endl;
+        EndTimerAndPrint(lm_start, "local mapping total");
 
         usleep(3000);
     }

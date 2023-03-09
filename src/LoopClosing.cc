@@ -60,7 +60,7 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 void LoopClosing::Run()
 {
     // cout_stream.open("/home/nvidia/ORB_SLAM2/loopclosing.txt", std::ofstream::trunc);
-    cout_stream.open("/home/sofiya/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
+    cout_stream.open("/home/sofiya/char/ORB_SLAM2_logging/loopclosing.txt", std::ofstream::trunc);
     cout_stream << "loopclosing file!" << endl;
 
     mbFinished =false;
@@ -81,8 +81,15 @@ void LoopClosing::Run()
                {
                    // Perform loop fusion and pose graph optimization
                    CorrectLoop();
+
+                    auto lc_end = std::chrono::high_resolution_clock::now();
+                    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end.time_since_epoch());
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end - lc_start);
+                    std::string print = std::string("Sofiya,loop closing total,") + to_string(duration.count())  + ",ms,timestamp," + to_string(timestamp.count()) + "\n";
+                    cout_stream << print << endl;
                }
             }
+
         }       
 
         ResetIfRequested();
@@ -92,11 +99,6 @@ void LoopClosing::Run()
 
         usleep(5000);
 
-        auto lc_end = std::chrono::high_resolution_clock::now();
-        auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end.time_since_epoch());
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(lc_end - lc_start);
-        std::string print = std::string("Sofiya,loop closing total,") + to_string(duration.count())  + ",ms,timestamp," + to_string(timestamp.count()) + "\n";
-        cout_stream << print << endl;
     }
 
     SetFinish();
